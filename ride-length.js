@@ -2339,44 +2339,53 @@
 
 	var RideMeasurements = /** @class */ (function () {
 	    function RideMeasurements() {
-	        this.selectedRide = null;
-	        this.maxLength = 0;
-	        this.length = 0;
 	        this.previousVerticalG = 0;
 	        this.previousLateralG = 0;
-	        this.maxVerticalPosG = 0;
-	        this.maxVerticalNegG = 100;
-	        this.maxLateralG = 0;
+	        this.averageSpeedTestTimeout = 0;
+	        this.selectedRide = null;
+	        this.maxLength = new MaxValue();
+	        this.maxVerticalPosG = new MaxValue();
+	        this.maxVerticalNegG = new MinValue(100);
+	        this.maxLateralG = new MaxValue();
+	        this.totalAirTime = new MaxValue();
+	        this.maxSpeed = new MaxValue();
+	        this.averageSpeed = new MaxValue();
+	        this.time = new MaxValue();
 	    }
 	    RideMeasurements.prototype.update = function () {
-	        this.updateMeasurementsLength();
-	        this.updateMeasurementsGForce();
-	    };
-	    RideMeasurements.prototype.updateMeasurementsLength = function () {
 	        var car = this.currentFrontCar;
 	        if (car == null)
 	            return;
+	        if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
+	            this.newRound();
+	        }
+	        this.lastCarStatus = car.status;
+	        this.updateMeasurementsLength(car);
+	        this.updateMeasurementsGForce(car);
+	    };
+	    RideMeasurements.prototype.updateMeasurementsLength = function (car) {
 	        var acceleration = car.acceleration;
 	        var velocity = car.velocity;
 	        var result = Math.abs(((velocity + acceleration) >> 10) * 42);
-	        if (car.status == "waiting_to_depart") {
-	            this.length = 0;
-	        }
-	        this.length += result;
-	        if (this.length > this.maxLength) {
-	            this.maxLength = this.length;
-	        }
+	        this.maxLength.current += result;
 	    };
-	    RideMeasurements.prototype.updateMeasurementsGForce = function () {
+	    RideMeasurements.prototype.updateMeasurementsGForce = function (car) {
 	        var _this = this;
-	        var car = this.currentFrontCar;
-	        if (car == null)
-	            return;
 	        var tile = map.getTile(car.x / 32, car.y / 32);
 	        var trackElement = tile.elements.filter(function (element) {
 	            var _a;
 	            return element.type == "track" && element.ride == ((_a = _this.selectedRide) === null || _a === void 0 ? void 0 : _a.id);
 	        })[0];
+	        if (this.maxSpeed.current <= car.velocity) {
+	            this.maxSpeed.current = car.velocity;
+	        }
+	        this.averageSpeedTestTimeout++;
+	        if (this.averageSpeedTestTimeout >= 32)
+	            this.averageSpeedTestTimeout = 0;
+	        if (this.averageSpeedTestTimeout == 0 && Math.abs(car.velocity) > 0x8000) {
+	            this.averageSpeed.current = this.averageSpeed.current + Math.abs(car.velocity);
+	            this.time.current++;
+	        }
 	        var gForces = getGForces(trackElement.trackType, car.spriteType, car.bankRotation, car.trackProgress, car.velocity);
 	        var verticalG = gForces.gForceVert + this.previousVerticalG;
 	        var lateralG = gForces.gForceLateral + this.previousLateralG;
@@ -2384,30 +2393,48 @@
 	        lateralG /= 2;
 	        this.previousVerticalG = verticalG;
 	        this.previousLateralG = lateralG;
-	        /*
-	        if (gForces.VerticalG <= 0) {
-	            curRide -> total_air_time++
+	        if (verticalG <= 0) {
+	            this.totalAirTime.current++;
 	        }
-	        */
-	        if (verticalG > this.maxVerticalPosG)
-	            this.maxVerticalPosG = verticalG;
-	        if (verticalG < this.maxVerticalNegG)
-	            this.maxVerticalNegG = verticalG;
-	        if (Math.abs(lateralG) > this.maxLateralG)
-	            this.maxLateralG = Math.abs(lateralG);
+	        if (verticalG > this.maxVerticalPosG.current) {
+	            this.maxVerticalPosG.current = verticalG;
+	        }
+	        if (verticalG < this.maxVerticalNegG.current) {
+	            this.maxVerticalNegG.current = verticalG;
+	        }
+	        if (Math.abs(lateralG) > this.maxLateralG.current) {
+	            this.maxLateralG.current = Math.abs(lateralG);
+	        }
 	    };
 	    RideMeasurements.prototype.selectRide = function (index) {
 	        this.selectedRide = this.rides[index];
 	        this.reset();
 	    };
-	    RideMeasurements.prototype.reset = function () {
-	        this.maxLength = 0;
-	        this.length = 0;
+	    RideMeasurements.prototype.newRound = function () {
 	        this.previousVerticalG = 0;
 	        this.previousLateralG = 0;
-	        this.maxVerticalPosG = 0;
-	        this.maxVerticalNegG = 100;
-	        this.maxLateralG = 0;
+	        this.averageSpeedTestTimeout = 0;
+	        this.maxLength.push();
+	        this.maxVerticalPosG.push();
+	        this.maxVerticalNegG.push();
+	        this.maxLateralG.push();
+	        this.totalAirTime.push();
+	        this.maxSpeed.push();
+	        this.averageSpeed.push();
+	        this.time.push();
+	    };
+	    RideMeasurements.prototype.reset = function () {
+	        this.previousVerticalG = 0;
+	        this.previousLateralG = 0;
+	        this.averageSpeedTestTimeout = 0;
+	        this.maxLength.reset();
+	        this.maxVerticalPosG.reset();
+	        this.maxVerticalNegG.reset();
+	        this.maxLateralG.reset();
+	        this.totalAirTime.reset();
+	        this.maxSpeed.reset();
+	        this.averageSpeed.reset();
+	        this.time.reset();
 	    };
 	    Object.defineProperty(RideMeasurements.prototype, "rides", {
 	        get: function () {
@@ -2439,6 +2466,48 @@
 	        configurable: true
 	    });
 	    return RideMeasurements;
+	}());
+	var MaxValue = /** @class */ (function () {
+	    function MaxValue(value) {
+	        this.initialValue = value || 0;
+	        this.current = value || 0;
+	        this.last = value || 0;
+	    }
+	    Object.defineProperty(MaxValue.prototype, "value", {
+	        get: function () { return Math.max(this.current, this.last); },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    MaxValue.prototype.push = function () {
+	        this.last = this.current;
+	        this.current = this.initialValue;
+	    };
+	    MaxValue.prototype.reset = function () {
+	        this.last = this.initialValue;
+	        this.current = this.initialValue;
+	    };
+	    return MaxValue;
+	}());
+	var MinValue = /** @class */ (function () {
+	    function MinValue(value) {
+	        this.initialValue = value || 0;
+	        this.current = value || 0;
+	        this.last = value || 0;
+	    }
+	    Object.defineProperty(MinValue.prototype, "value", {
+	        get: function () { return Math.min(this.current, this.last); },
+	        enumerable: false,
+	        configurable: true
+	    });
+	    MinValue.prototype.push = function () {
+	        this.last = this.current;
+	        this.current = this.initialValue;
+	    };
+	    MinValue.prototype.reset = function () {
+	        this.last = this.initialValue;
+	        this.current = this.initialValue;
+	    };
+	    return MinValue;
 	}());
 
 	/* eslint-disable indent */
@@ -2622,6 +2691,9 @@
 	    return RideMeasurementsWindow;
 	}());
 
+	// Doesn't support rides with multiple stations
+	// G calculation is off
+	// Ghost trains need to be enabled
 	registerPlugin({
 	    name: "Ride Info",
 	    version: "1.0",
@@ -2648,15 +2720,20 @@
 	        if (car == null)
 	            return;
 	        rideMeasurements.update();
-	        rideMeasurementsWindow.setValue(Measurements.rideLength, (rideMeasurements.maxLength >> 16) + "m");
-	        rideMeasurementsWindow.setValue(Measurements.positiveGs, (rideMeasurements.maxVerticalPosG / 100).toFixed(2) + "g");
-	        rideMeasurementsWindow.setValue(Measurements.negativeGs, (rideMeasurements.maxVerticalNegG / 100).toFixed(2) + "g");
-	        rideMeasurementsWindow.setValue(Measurements.lateralGs, (rideMeasurements.maxLateralG / 100).toFixed(2) + "g");
+	        rideMeasurementsWindow.setValue(Measurements.maxSpeed, mphToKmph((rideMeasurements.maxSpeed.value * 9) >> 18) + " km/h");
+	        rideMeasurementsWindow.setValue(Measurements.rideLength, (rideMeasurements.maxLength.value >> 16) + " m");
+	        rideMeasurementsWindow.setValue(Measurements.positiveGs, (rideMeasurements.maxVerticalPosG.value / 100).toFixed(2) + " g");
+	        rideMeasurementsWindow.setValue(Measurements.negativeGs, (rideMeasurements.maxVerticalNegG.value / 100).toFixed(2) + " g");
+	        rideMeasurementsWindow.setValue(Measurements.lateralGs, (rideMeasurements.maxLateralG.value / 100).toFixed(2) + " g");
+	        rideMeasurementsWindow.setValue(Measurements.airTime, (rideMeasurements.totalAirTime.value * 3 / 100).toFixed(2) + " secs");
+	        rideMeasurementsWindow.setValue(Measurements.averageSpeed, mphToKmph(((rideMeasurements.averageSpeed.value / rideMeasurements.time.value) * 9) >> 18) + " km/h");
+	        rideMeasurementsWindow.setValue(Measurements.rideTime, (rideMeasurements.time.value) + " secs");
 	    });
 	    rideMeasurementsWindow.open(tickHook.dispose, function (index) {
 	        rideMeasurements.selectRide(index - 1);
 	    });
 	    rideMeasurementsWindow.dropdownContent = rideNames;
 	}
+	var mphToKmph = function (mph) { return (mph * 1648) >> 10; };
 
 }());
