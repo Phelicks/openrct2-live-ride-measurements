@@ -1686,7 +1686,7 @@
 	            break;
 	        case TrackElemType.HalfLoopUp:
 	        case TrackElemType.FlyerHalfLoopUp:
-	            vertFactor = (((-(trackProgress - 155))) / 2) + 28;
+	            vertFactor = (((-(trackProgress - 155)) & 0xFFFF) / 2) + 28;
 	            // 6d763E
 	            break;
 	        case TrackElemType.HalfLoopDown:
@@ -1866,7 +1866,7 @@
 	            break;
 	        case TrackElemType.LeftLargeHalfLoopUp:
 	        case TrackElemType.RightLargeHalfLoopUp:
-	            vertFactor = (((-(trackProgress - 311))) / 4) + 46;
+	            vertFactor = (((-(trackProgress - 311)) & 0xFFFF) / 4) + 46;
 	            // 6d7666
 	            break;
 	        case TrackElemType.RightLargeHalfLoopDown:
@@ -2353,15 +2353,18 @@
 	        this.time = new MaxValue();
 	    }
 	    RideMeasurements.prototype.update = function () {
-	        var car = this.currentFrontCar;
-	        if (car == null)
+	        var cars = this.getRideCars;
+	        if (cars == null || cars.length == 0)
 	            return;
-	        if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
-	            this.newRound();
+	        for (var _i = 0, cars_1 = cars; _i < cars_1.length; _i++) {
+	            var car = cars_1[_i];
+	            if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
+	                this.newRound();
+	            }
+	            this.lastCarStatus = car.status;
+	            this.updateMeasurementsLength(car);
+	            this.updateMeasurementsGForce(car);
 	        }
-	        this.lastCarStatus = car.status;
-	        this.updateMeasurementsLength(car);
-	        this.updateMeasurementsGForce(car);
 	    };
 	    RideMeasurements.prototype.updateMeasurementsLength = function (car) {
 	        var acceleration = car.acceleration;
@@ -2386,14 +2389,18 @@
 	            this.averageSpeed.current = this.averageSpeed.current + Math.abs(car.velocity);
 	            this.time.current++;
 	        }
-	        var gForces = getGForces(trackElement.trackType, car.spriteType, car.bankRotation, car.trackProgress, car.velocity);
+	        var gForces = car.gForces ? {
+	            gForceVert: car.gForces.verticalG,
+	            gForceLateral: car.gForces.lateralG,
+	        } : getGForces(trackElement.trackType, // incorrect value
+	        car.spriteType, car.bankRotation, car.trackProgress, car.velocity);
 	        var verticalG = gForces.gForceVert + this.previousVerticalG;
 	        var lateralG = gForces.gForceLateral + this.previousLateralG;
 	        verticalG /= 2;
 	        lateralG /= 2;
 	        this.previousVerticalG = verticalG;
 	        this.previousLateralG = lateralG;
-	        if (verticalG <= 0) {
+	        if ((verticalG & 0xFFFFFFFF) <= 0) {
 	            this.totalAirTime.current++;
 	        }
 	        if (verticalG > this.maxVerticalPosG.current) {
@@ -2407,6 +2414,10 @@
 	        }
 	    };
 	    RideMeasurements.prototype.selectRide = function (index) {
+	        if (index == null) {
+	            this.selectedRide = null;
+	            return;
+	        }
 	        this.selectedRide = this.rides[index];
 	        this.reset();
 	    };
@@ -2450,17 +2461,19 @@
 	        enumerable: false,
 	        configurable: true
 	    });
-	    Object.defineProperty(RideMeasurements.prototype, "currentFrontCar", {
+	    Object.defineProperty(RideMeasurements.prototype, "getRideCars", {
 	        get: function () {
 	            if (this.selectedRide == null)
 	                return null;
 	            var vehicleId = this.selectedRide.vehicles[0];
 	            if (vehicleId != 0 && !vehicleId)
 	                return null;
-	            var cars = map.getAllEntities("car");
+	            var cars = map.getAllEntities("car")
+	                .filter(function (entity) { return entity.id == vehicleId; })
+	                .map(function (entity) { return entity; });
 	            if (cars.length == 0)
 	                return null;
-	            return cars.filter(function (car) { return car.id == vehicleId; })[0];
+	            return cars;
 	        },
 	        enumerable: false,
 	        configurable: true
@@ -2603,13 +2616,29 @@
 	        configurable: true
 	    });
 	    RideMeasurementsWindow.prototype.getLabelWidget = function (type) {
-	        var _a;
-	        return (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.findWidget(type.toString());
+	        var _a, _b;
+	        for (var _i = 0, _c = (_b = (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.widgets) !== null && _b !== void 0 ? _b : []; _i < _c.length; _i++) {
+	            var widget = _c[_i];
+	            if (widget.name == type.toString()) {
+	                return widget;
+	            }
+	        }
+	    };
+	    RideMeasurementsWindow.prototype.getValueLabelWidget = function (type) {
+	        var _a, _b;
+	        for (var _i = 0, _c = (_b = (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.widgets) !== null && _b !== void 0 ? _b : []; _i < _c.length; _i++) {
+	            var widget = _c[_i];
+	            if (widget.name == type.toString() + "-value") {
+	                return widget;
+	            }
+	        }
 	    };
 	    RideMeasurementsWindow.prototype.setValue = function (type, text) {
 	        var _a;
 	        var label = (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.findWidget(type.toString() + "-value");
-	        label.text = text;
+	        if (label) {
+	            label.text = text;
+	        }
 	    };
 	    Object.defineProperty(RideMeasurementsWindow.prototype, "dropdownContent", {
 	        set: function (content) {
@@ -2623,7 +2652,7 @@
 	            classification: "my.window",
 	            width: windowWidth,
 	            height: windowHeight,
-	            title: "Ride length preview",
+	            title: "Ride Measurements Preview",
 	            onClose: onClose,
 	            widgets: [
 	                {
@@ -2635,14 +2664,24 @@
 	                    type: "dropdown",
 	                    items: this.dropdownHeadline,
 	                    selectedIndex: 0,
-	                    onChange: onSelectRide
+	                    onChange: onSelectRide,
 	                },
-	                this.label(Measurements.excitment),
-	                this.value(Measurements.excitment),
-	                this.label(Measurements.intensity),
-	                this.value(Measurements.intensity),
-	                this.label(Measurements.nausea),
-	                this.value(Measurements.nausea),
+	                {
+	                    name: "hint_label",
+	                    type: "label",
+	                    width: 145,
+	                    height: 20,
+	                    x: 25,
+	                    y: 60,
+	                    text: "",
+	                    isVisible: false
+	                },
+	                this.label(Measurements.excitment, true),
+	                this.value(Measurements.excitment, true),
+	                this.label(Measurements.intensity, true),
+	                this.value(Measurements.intensity, true),
+	                this.label(Measurements.nausea, true),
+	                this.value(Measurements.nausea, true),
 	                this.label(Measurements.maxSpeed),
 	                this.value(Measurements.maxSpeed),
 	                this.label(Measurements.averageSpeed),
@@ -2659,14 +2698,62 @@
 	                this.value(Measurements.lateralGs),
 	                this.label(Measurements.airTime),
 	                this.value(Measurements.airTime),
-	                this.label(Measurements.drops),
-	                this.value(Measurements.drops),
-	                this.label(Measurements.highestDrop),
-	                this.value(Measurements.highestDrop),
+	                this.label(Measurements.drops, true),
+	                this.value(Measurements.drops, true),
+	                this.label(Measurements.highestDrop, true),
+	                this.value(Measurements.highestDrop, true),
 	            ]
 	        });
 	    };
-	    RideMeasurementsWindow.prototype.label = function (type) {
+	    RideMeasurementsWindow.prototype.hideValues = function () {
+	        for (var measurement in Measurements) {
+	            var label = this.getLabelWidget(Number(measurement));
+	            var value = this.getValueLabelWidget(Number(measurement));
+	            if (label) {
+	                label.isVisible = false;
+	            }
+	            if (value) {
+	                value.isVisible = false;
+	            }
+	        }
+	    };
+	    RideMeasurementsWindow.prototype.showValues = function () {
+	        for (var measurement in Measurements) {
+	            var label = this.getLabelWidget(Number(measurement));
+	            var value = this.getValueLabelWidget(Number(measurement));
+	            if (label) {
+	                label.isVisible = true;
+	            }
+	            if (value) {
+	                value.isVisible = true;
+	            }
+	        }
+	        this.updateWindow();
+	    };
+	    RideMeasurementsWindow.prototype.showHint = function (text) {
+	        var _a, _b;
+	        for (var _i = 0, _c = (_b = (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.widgets) !== null && _b !== void 0 ? _b : []; _i < _c.length; _i++) {
+	            var widget = _c[_i];
+	            if (widget.name == "hint_label") {
+	                widget.text = text;
+	                widget.isVisible = true;
+	                return;
+	            }
+	        }
+	        this.updateWindow();
+	    };
+	    RideMeasurementsWindow.prototype.hideHint = function () {
+	        var _a, _b;
+	        for (var _i = 0, _c = (_b = (_a = this.uiWindow) === null || _a === void 0 ? void 0 : _a.widgets) !== null && _b !== void 0 ? _b : []; _i < _c.length; _i++) {
+	            var widget = _c[_i];
+	            if (widget.name == "hint_label") {
+	                widget.isVisible = false;
+	                return;
+	            }
+	        }
+	    };
+	    RideMeasurementsWindow.prototype.label = function (type, isDisabled) {
+	        if (isDisabled === void 0) { isDisabled = false; }
 	        return {
 	            name: type.toString(),
 	            type: "label",
@@ -2674,10 +2761,12 @@
 	            height: 20,
 	            x: 5,
 	            y: 50 + 10 * getIndex(type),
-	            text: getName(type) + ":"
+	            text: getName(type) + ":",
+	            isDisabled: isDisabled
 	        };
 	    };
-	    RideMeasurementsWindow.prototype.value = function (type) {
+	    RideMeasurementsWindow.prototype.value = function (type, isDisabled) {
+	        if (isDisabled === void 0) { isDisabled = false; }
 	        return {
 	            name: type.toString() + "-value",
 	            type: "label",
@@ -2685,28 +2774,42 @@
 	            height: 20,
 	            x: 150,
 	            y: 50 + 10 * getIndex(type),
-	            text: "-"
+	            text: "-",
+	            isDisabled: isDisabled
 	        };
+	    };
+	    RideMeasurementsWindow.prototype.updateWindow = function () {
+	        // This is a hack because the window doesn't get
+	        // updated when labels are made visible/invisible
+	        if (this.uiWindow) {
+	            this.uiWindow.x += 1;
+	            this.uiWindow.x -= 1;
+	        }
 	    };
 	    return RideMeasurementsWindow;
 	}());
 
+	// TODO:
 	// Doesn't support rides with multiple stations
-	// G calculation is off
-	// Ghost trains need to be enabled
+	// Show imperial measurements
+	// Add Reset Button
 	registerPlugin({
-	    name: "Ride Info",
-	    version: "1.0",
+	    name: "Live Ride Measurements",
+	    version: "1.0.0",
 	    authors: ["Felix Janus"],
 	    licence: "MIT",
-	    type: "local",
+	    type: "remote",
+	    minApiVersion: 1,
 	    main: function () {
-	        ui.registerMenuItem("Ride length", function () {
+	        if (!ui) {
+	            return;
+	        }
+	        ui.registerMenuItem("Live Ride Measurements", function () {
 	            openRideMeasurementsWindow();
 	        });
-	        console.clear();
-	        ui.closeAllWindows();
-	        openRideMeasurementsWindow();
+	        // console.clear()
+	        // ui.closeAllWindows()
+	        // openRideMeasurementsWindow()
 	    }
 	});
 	function openRideMeasurementsWindow() {
@@ -2714,12 +2817,25 @@
 	    var rideMeasurements = new RideMeasurements();
 	    var rideNames = rideMeasurements.rideNames;
 	    var tickHook = context.subscribe("interval.tick", function () {
-	        if (rideMeasurements.selectedRide == null)
+	        if (rideMeasurements.selectedRide == null) {
+	            rideMeasurementsWindow.hideValues();
+	            rideMeasurementsWindow.hideHint();
 	            return;
-	        var car = rideMeasurements.currentFrontCar;
-	        if (car == null)
+	        }
+	        var cars = rideMeasurements.getRideCars;
+	        if (cars == null || cars.length == 0) {
+	            rideMeasurementsWindow.hideValues();
+	            rideMeasurementsWindow.showHint("Please enable ghost trains.");
 	            return;
+	        }
+	        rideMeasurementsWindow.showValues();
+	        rideMeasurementsWindow.hideHint();
 	        rideMeasurements.update();
+	        if (rideMeasurements.selectedRide != null) {
+	            rideMeasurementsWindow.setValue(Measurements.excitment, (rideMeasurements.selectedRide.excitement / 100).toFixed(2).toString());
+	            rideMeasurementsWindow.setValue(Measurements.intensity, (rideMeasurements.selectedRide.intensity / 100).toFixed(2).toString());
+	            rideMeasurementsWindow.setValue(Measurements.nausea, (rideMeasurements.selectedRide.nausea / 100).toFixed(2).toString());
+	        }
 	        rideMeasurementsWindow.setValue(Measurements.maxSpeed, mphToKmph((rideMeasurements.maxSpeed.value * 9) >> 18) + " km/h");
 	        rideMeasurementsWindow.setValue(Measurements.rideLength, (rideMeasurements.maxLength.value >> 16) + " m");
 	        rideMeasurementsWindow.setValue(Measurements.positiveGs, (rideMeasurements.maxVerticalPosG.value / 100).toFixed(2) + " g");
@@ -2729,7 +2845,10 @@
 	        rideMeasurementsWindow.setValue(Measurements.averageSpeed, mphToKmph(((rideMeasurements.averageSpeed.value / rideMeasurements.time.value) * 9) >> 18) + " km/h");
 	        rideMeasurementsWindow.setValue(Measurements.rideTime, (rideMeasurements.time.value) + " secs");
 	    });
-	    rideMeasurementsWindow.open(tickHook.dispose, function (index) {
+	    rideMeasurementsWindow.open(function () {
+	        rideMeasurements.selectRide(null);
+	        tickHook.dispose();
+	    }, function (index) {
 	        rideMeasurements.selectRide(index - 1);
 	    });
 	    rideMeasurementsWindow.dropdownContent = rideNames;

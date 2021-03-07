@@ -247,7 +247,7 @@ function getGForces(
             break
         case TrackElemType.HalfLoopUp:
         case TrackElemType.FlyerHalfLoopUp:
-            vertFactor = (((-(trackProgress - 155))) / 2) + 28
+            vertFactor = (((-(trackProgress - 155)) & 0xFFFF) / 2) + 28
             // 6d763E
             break
         case TrackElemType.HalfLoopDown:
@@ -427,7 +427,7 @@ function getGForces(
             break
         case TrackElemType.LeftLargeHalfLoopUp:
         case TrackElemType.RightLargeHalfLoopUp:
-            vertFactor = (((-(trackProgress - 311))) / 4) + 46
+            vertFactor = (((-(trackProgress - 311)) & 0xFFFF) / 4) + 46
             // 6d7666
             break
         case TrackElemType.RightLargeHalfLoopDown:

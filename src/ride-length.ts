@@ -1,25 +1,31 @@
 import { RideMeasurements } from "./ride-measurements"
 import { Measurements, RideMeasurementsWindow } from "./ride-measurements-window"
 
+// TODO:
 // Doesn't support rides with multiple stations
-// G calculation is off
-// Ghost trains need to be enabled
+// Show imperial measurements
+// Add Reset Button
 
 registerPlugin({
-    name: "Ride Info",
-    version: "1.0",
+    name: "Live Ride Measurements",
+    version: "1.0.0",
     authors: ["Felix Janus"],
     licence: "MIT",
-    type: "local",
+    type: "remote",
+    minApiVersion: 1,
     main: () => {
 
-        ui.registerMenuItem("Ride length", () => {
+        if (!ui) {
+            return
+        }
+
+        ui.registerMenuItem("Live Ride Measurements", () => {
             openRideMeasurementsWindow()
         })
 
-        console.clear()
-        ui.closeAllWindows()
-        openRideMeasurementsWindow()
+        // console.clear()
+        // ui.closeAllWindows()
+        // openRideMeasurementsWindow()
     }
 })
 
@@ -30,14 +36,28 @@ function openRideMeasurementsWindow() {
 
 
     const tickHook = context.subscribe("interval.tick", () => {
-        if (rideMeasurements.selectedRide == null)
+        if (rideMeasurements.selectedRide == null) {
+            rideMeasurementsWindow.hideValues()
+            rideMeasurementsWindow.hideHint()
             return
+        }
 
-        const car = rideMeasurements.currentFrontCar
-        if (car == null)
+        const cars = rideMeasurements.getRideCars
+        if (cars == null || cars.length == 0) {
+            rideMeasurementsWindow.hideValues()
+            rideMeasurementsWindow.showHint("Please enable ghost trains.")
             return
+        }
+        rideMeasurementsWindow.showValues()
+        rideMeasurementsWindow.hideHint()
 
         rideMeasurements.update()
+
+        if (rideMeasurements.selectedRide != null) {
+            rideMeasurementsWindow.setValue(Measurements.excitment, (rideMeasurements.selectedRide.excitement / 100).toFixed(2).toString())
+            rideMeasurementsWindow.setValue(Measurements.intensity, (rideMeasurements.selectedRide.intensity / 100).toFixed(2).toString())
+            rideMeasurementsWindow.setValue(Measurements.nausea, (rideMeasurements.selectedRide.nausea / 100).toFixed(2).toString())
+        }
 
         rideMeasurementsWindow.setValue(Measurements.maxSpeed, mphToKmph((rideMeasurements.maxSpeed.value * 9) >> 18) + " km/h")
         rideMeasurementsWindow.setValue(Measurements.rideLength, (rideMeasurements.maxLength.value >> 16) + " m")
@@ -49,7 +69,10 @@ function openRideMeasurementsWindow() {
         rideMeasurementsWindow.setValue(Measurements.rideTime, (rideMeasurements.time.value) + " secs")
     })
 
-    rideMeasurementsWindow.open(tickHook.dispose, (index) => {
+    rideMeasurementsWindow.open(() => {
+        rideMeasurements.selectRide(null);
+        tickHook.dispose();
+    }, (index) => {
         rideMeasurements.selectRide(index - 1)
     });
     rideMeasurementsWindow.dropdownContent = rideNames
