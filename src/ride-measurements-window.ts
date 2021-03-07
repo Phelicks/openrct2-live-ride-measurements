@@ -88,13 +88,27 @@ export class RideMeasurementsWindow {
         return this.uiWindow?.findWidget("ride_selection") as DropdownWidget;
     }
 
-    getLabelWidget(type: Measurements): LabelWidget {
-        return this.uiWindow?.findWidget(type.toString()) as LabelWidget;
+    getLabelWidget(type: Measurements): LabelWidget | undefined {
+        for (const widget of this.uiWindow?.widgets ?? []) {
+            if (widget.name == type.toString()) {
+                return widget as LabelWidget
+            }
+        }
+    }
+
+    getValueLabelWidget(type: Measurements): LabelWidget | undefined {
+        for (const widget of this.uiWindow?.widgets ?? []) {
+            if (widget.name == type.toString() + "-value") {
+                return widget as LabelWidget
+            }
+        }
     }
 
     setValue(type: Measurements, text: string): void {
-        const label = this.uiWindow?.findWidget(type.toString() + "-value") as LabelWidget;
-        label.text = text
+        const label = this.uiWindow?.findWidget<LabelWidget>(type.toString() + "-value");
+        if (label) {
+            label.text = text
+        }
     }
 
     set dropdownContent(content: string[]) {
@@ -107,7 +121,7 @@ export class RideMeasurementsWindow {
             classification: "my.window",
             width: windowWidth,
             height: windowHeight,
-            title: "Ride length preview",
+            title: "Ride Measurements Preview",
             onClose: onClose,
             widgets: [
                 {
@@ -119,14 +133,24 @@ export class RideMeasurementsWindow {
                     type: "dropdown",
                     items: this.dropdownHeadline,
                     selectedIndex: 0,
-                    onChange: onSelectRide
+                    onChange: onSelectRide,
                 },
-                this.label(Measurements.excitment),
-                this.value(Measurements.excitment),
-                this.label(Measurements.intensity),
-                this.value(Measurements.intensity),
-                this.label(Measurements.nausea),
-                this.value(Measurements.nausea),
+                {
+                    name: "hint_label",
+                    type: "label",
+                    width: 145,
+                    height: 20,
+                    x: 25,
+                    y: 60,
+                    text: "",
+                    isVisible: false
+                },
+                this.label(Measurements.excitment, true),
+                this.value(Measurements.excitment, true),
+                this.label(Measurements.intensity, true),
+                this.value(Measurements.intensity, true),
+                this.label(Measurements.nausea, true),
+                this.value(Measurements.nausea, true),
                 this.label(Measurements.maxSpeed),
                 this.value(Measurements.maxSpeed),
                 this.label(Measurements.averageSpeed),
@@ -143,15 +167,62 @@ export class RideMeasurementsWindow {
                 this.value(Measurements.lateralGs),
                 this.label(Measurements.airTime),
                 this.value(Measurements.airTime),
-                this.label(Measurements.drops),
-                this.value(Measurements.drops),
-                this.label(Measurements.highestDrop),
-                this.value(Measurements.highestDrop),
+                this.label(Measurements.drops, true),
+                this.value(Measurements.drops, true),
+                this.label(Measurements.highestDrop, true),
+                this.value(Measurements.highestDrop, true),
             ]
         });
     }
 
-    label(type: Measurements): Widget {
+    hideValues(): void {
+        for (const measurement in Measurements) {
+            const label = this.getLabelWidget(Number(measurement))
+            const value = this.getValueLabelWidget(Number(measurement))
+            if (label) {
+                label.isVisible = false
+            }
+            if (value) {
+                value.isVisible = false
+            }
+        }
+    }
+
+    showValues(): void {
+        for (const measurement in Measurements) {
+            const label = this.getLabelWidget(Number(measurement))
+            const value = this.getValueLabelWidget(Number(measurement))
+            if (label) {
+                label.isVisible = true
+            }
+            if (value) {
+                value.isVisible = true
+            }
+        }
+        this.updateWindow()
+    }
+
+    showHint(text: string): void {
+        for (const widget of this.uiWindow?.widgets ?? []) {
+            if (widget.name == "hint_label") {
+                (widget as LabelWidget).text = text
+                widget.isVisible = true
+                return
+            }
+        }
+        this.updateWindow()
+    }
+
+    hideHint(): void {
+        for (const widget of this.uiWindow?.widgets ?? []) {
+            if (widget.name == "hint_label") {
+                widget.isVisible = false
+                return
+            }
+        }
+    }
+
+    label(type: Measurements, isDisabled = false): LabelWidget {
         return {
             name: type.toString(),
             type: "label",
@@ -159,11 +230,12 @@ export class RideMeasurementsWindow {
             height: 20,
             x: 5,
             y: 50 + 10 * getIndex(type),
-            text: getName(type) + ":"
+            text: getName(type) + ":",
+            isDisabled
         }
     }
 
-    value(type: Measurements): Widget {
+    value(type: Measurements, isDisabled = false): LabelWidget {
         return {
             name: type.toString() + "-value",
             type: "label",
@@ -171,7 +243,17 @@ export class RideMeasurementsWindow {
             height: 20,
             x: 150,
             y: 50 + 10 * getIndex(type),
-            text: "-"
+            text: "-",
+            isDisabled
+        }
+    }
+
+    updateWindow(): void {
+        // This is a hack because the window doesn't get
+        // updated when labels are made visible/invisible
+        if (this.uiWindow) {
+            this.uiWindow.x += 1
+            this.uiWindow.x -= 1
         }
     }
 }

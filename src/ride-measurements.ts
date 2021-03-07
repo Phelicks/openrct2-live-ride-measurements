@@ -19,17 +19,20 @@ export class RideMeasurements {
     time = new MaxValue();
 
     update(): void {
-        const car = this.currentFrontCar
-        if (car == null)
+        const cars = this.getRideCars
+        if (cars == null || cars.length == 0)
             return;
 
-        if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
-            this.newRound()
-        }
-        this.lastCarStatus = car.status
+        for (const car of cars) {
+            if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
+                this.newRound()
+            }
+            this.lastCarStatus = car.status
 
-        this.updateMeasurementsLength(car);
-        this.updateMeasurementsGForce(car);
+            this.updateMeasurementsLength(car);
+            this.updateMeasurementsGForce(car);
+        }
+
     }
 
     updateMeasurementsLength(car: Car): void {
@@ -59,13 +62,17 @@ export class RideMeasurements {
             this.time.current++
         }
 
-        const gForces = getGForces(
-            trackElement.trackType,
+        const gForces = car.gForces ? {
+            gForceVert: car.gForces.verticalG,
+            gForceLateral: car.gForces.lateralG,
+        } : getGForces(
+            trackElement.trackType, // incorrect value
             car.spriteType,
             car.bankRotation,
             car.trackProgress,
             car.velocity
         );
+
 
         let verticalG = gForces.gForceVert + this.previousVerticalG;
         let lateralG = gForces.gForceLateral + this.previousLateralG;
@@ -75,8 +82,7 @@ export class RideMeasurements {
         this.previousVerticalG = verticalG;
         this.previousLateralG = lateralG;
 
-
-        if (verticalG <= 0) {
+        if ((verticalG & 0xFFFFFFFF) <= 0) {
             this.totalAirTime.current++
         }
 
@@ -93,7 +99,11 @@ export class RideMeasurements {
         }
     }
 
-    selectRide(index: number): void {
+    selectRide(index: number | null): void {
+        if (index == null) {
+            this.selectedRide = null
+            return
+        }
         this.selectedRide = this.rides[index];
         this.reset()
     }
@@ -134,7 +144,7 @@ export class RideMeasurements {
         return this.rides.map((ride) => ride.name);
     }
 
-    get currentFrontCar(): Car | null {
+    get getRideCars(): Car[] | null {
         if (this.selectedRide == null)
             return null;
 
@@ -143,12 +153,14 @@ export class RideMeasurements {
         if (vehicleId != 0 && !vehicleId)
             return null;
 
-        const cars = map.getAllEntities("car");
+        const cars = map.getAllEntities("car")
+            .filter((entity) => entity.id == vehicleId)
+            .map((entity) => entity as Car);
 
         if (cars.length == 0)
             return null;
 
-        return cars.filter((car) => car.id == vehicleId)[0] as Car;
+        return cars
     }
 }
 

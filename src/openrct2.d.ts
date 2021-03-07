@@ -22,32 +22,32 @@ declare global {
      * Global context for accessing all other APIs.
      */
     /** APIs for cheats. */
-    var cheats: Cheats
+    var cheats: Cheats;
     /** APIs for interacting with the stdout console. */
-    var console: Console
+    var console: Console;
     /** Core APIs for plugins. */
-    var context: Context
+    var context: Context;
     /** APIs for getting or setting the in-game date. */
-    var date: GameDate
+    var date: GameDate;
     /** APIs for manipulating the map. */
-    var map: GameMap
+    var map: GameMap;
     /** APIs for managing the server or interacting with the server or clients. */
-    var network: Network
+    var network: Network;
     /** APIs for the park and management of it. */
-    var park: Park
+    var park: Park;
     /** APIs for the current scenario. */
-    var scenario: Scenario
+    var scenario: Scenario;
     /**
      * APIs for creating and editing title sequences.
      * These will only be available to clients that are not running headless mode.
      */
-    var titleSequenceManager: TitleSequenceManager
+    var titleSequenceManager: TitleSequenceManager;
     /**
      * APIs for controlling the user interface.
      * These will only be available to servers and clients that are not running headless mode.
      * Plugin writers should check if ui is available using `typeof ui !== 'undefined'`.
      */
-    var ui: Ui
+    var ui: Ui;
 
     /**
      * Registers the plugin. This may only be called once.
@@ -104,6 +104,14 @@ declare global {
      */
     interface CoordsXYZD extends CoordsXYZ {
         direction: number;
+    }
+
+    /**
+     * 
+     */
+    interface GForces {
+        lateralG: number;
+        verticalG: number;
     }
 
     /**
@@ -1154,6 +1162,11 @@ declare global {
         trackLocation: CoordsXYZD;
 
         /**
+         * 
+         */
+        gForces: GForces;
+
+        /**
          * The progress on the current track piece, in steps.
          */
         readonly trackProgress: number;
@@ -1858,12 +1871,12 @@ declare global {
          * Whether to browse a file for loading or saving. Saving will prompt the user
          * before overwriting a file.
          */
-        type: "load";
+        type: 'load';
 
         /**
          * The type of file to browse for.
          */
-        fileType: "game" | "heightmap";
+        fileType: 'game' | 'heightmap';
 
         /**
          * The pre-selected file to load by default if the user clicks OK.
@@ -1891,8 +1904,8 @@ declare global {
      */
     interface ScenarioFile {
         id: number;
-        category: "beginner" | "challenging" | "expert" | "real" | "other" | "dlc" | "build_your_own";
-        sourceGame: "rct1" | "rct1_aa" | "rct1_ll" | "rct2" | "rct2_ww" | "rct2_tt" | "real" | "other";
+        category: 'beginner' | 'challenging' | 'expert' | 'real' | 'other' | 'dlc' | 'build_your_own';
+        sourceGame: 'rct1' | 'rct1_aa' | 'rct1_ll' | 'rct2' | 'rct2_ww' | 'rct2_tt' | 'real' | 'other';
         path: string;
         internalName: string;
         name: string;
@@ -2035,7 +2048,7 @@ declare global {
     }
 
     interface ButtonWidget extends WidgetBase {
-        type: "button";
+        type: 'button';
         /**
          * Whether the button has a 3D border.
          * By default, text buttons have borders and image buttons do not but it can be overridden.
@@ -2048,36 +2061,36 @@ declare global {
     }
 
     interface CheckboxWidget extends WidgetBase {
-        type: "checkbox";
+        type: 'checkbox';
         text?: string;
         isChecked?: boolean;
         onChange?: (isChecked: boolean) => void;
     }
 
     interface ColourPickerWidget extends WidgetBase {
-        type: "colourpicker";
+        type: 'colourpicker';
         colour?: number;
         onChange?: (colour: number) => void;
     }
 
     interface CustomWidget extends WidgetBase {
-        type: "custom";
+        type: 'custom';
         onDraw?: (this: CustomWidget, g: GraphicsContext) => void;
     }
 
     interface DropdownWidget extends WidgetBase {
-        type: "dropdown";
+        type: 'dropdown';
         items?: string[];
         selectedIndex?: number;
         onChange?: (index: number) => void;
     }
 
     interface GroupBoxWidget extends WidgetBase {
-        type: "groupbox";
+        type: 'groupbox';
     }
 
     interface LabelWidget extends WidgetBase {
-        type: "label";
+        type: 'label';
         text?: string;
         textAlign?: TextAlignment;
         onChange?: (index: number) => void;
@@ -2101,7 +2114,7 @@ declare global {
     }
 
     interface ListViewItemSeperator {
-        type: "seperator";
+        type: 'seperator';
         text?: string;
     }
 
@@ -2113,7 +2126,7 @@ declare global {
     }
 
     interface ListView extends WidgetBase {
-        type: "listview";
+        type: 'listview';
         scrollbars?: ScrollbarType;
         isStriped?: boolean;
         showColumnHeaders?: boolean;
@@ -2128,7 +2141,7 @@ declare global {
     }
 
     interface SpinnerWidget extends WidgetBase {
-        type: "spinner";
+        type: 'spinner';
         text?: string;
 
         onDecrement?: () => void;
@@ -2137,14 +2150,14 @@ declare global {
     }
 
     interface TextBoxWidget extends WidgetBase {
-        type: "textbox";
+        type: 'textbox';
         text?: string;
         maxLength?: number;
         onChange?: (text: string) => void;
     }
 
     interface ViewportWidget extends WidgetBase {
-        type: "viewport";
+        type: 'viewport';
         viewport?: Viewport;
     }
 
@@ -2266,9 +2279,9 @@ declare global {
         listen(port: number, host?: string): Listener;
         close(): Listener;
 
-        on(event: "connection", callback: (socket: Socket) => void): Listener;
+        on(event: 'connection', callback: (socket: Socket) => void): Listener;
 
-        off(event: "connection", callback: (socket: Socket) => void): Listener;
+        off(event: 'connection', callback: (socket: Socket) => void): Listener;
     }
 
     /**
@@ -2282,13 +2295,13 @@ declare global {
         end(data?: string): Socket;
         write(data: string): boolean;
 
-        on(event: "close", callback: (hadError: boolean) => void): Socket;
-        on(event: "error", callback: (hadError: boolean) => void): Socket;
-        on(event: "data", callback: (data: string) => void): Socket;
+        on(event: 'close', callback: (hadError: boolean) => void): Socket;
+        on(event: 'error', callback: (hadError: boolean) => void): Socket;
+        on(event: 'data', callback: (data: string) => void): Socket;
 
-        off(event: "close", callback: (hadError: boolean) => void): Socket;
-        off(event: "error", callback: (hadError: boolean) => void): Socket;
-        off(event: "data", callback: (data: string) => void): Socket;
+        off(event: 'close', callback: (hadError: boolean) => void): Socket;
+        off(event: 'error', callback: (hadError: boolean) => void): Socket;
+        off(event: 'data', callback: (data: string) => void): Socket;
     }
 
     interface TitleSequence {
@@ -2380,64 +2393,64 @@ declare global {
     }
 
     type TitleSequenceCommandType =
-        "load" |
-        "loadsc" |
-        "location" |
-        "rotate" |
-        "zoom" |
-        "speed" |
-        "follow" |
-        "wait" |
-        "restart" |
-        "end";
+        'load' |
+        'loadsc' |
+        'location' |
+        'rotate' |
+        'zoom' |
+        'speed' |
+        'follow' |
+        'wait' |
+        'restart' |
+        'end';
 
     interface LoadTitleSequenceCommand {
-        type: "load";
+        type: 'load';
         index: number;
     }
 
     interface LocationTitleSequenceCommand {
-        type: "location";
+        type: 'location';
         x: number;
         y: number;
     }
 
     interface RotateTitleSequenceCommand {
-        type: "rotate";
+        type: 'rotate';
         rotations: number;
     }
 
     interface ZoomTitleSequenceCommand {
-        type: "zoom";
+        type: 'zoom';
         zoom: number;
     }
 
     interface FollowTitleSequenceCommand {
-        type: "follow";
+        type: 'follow';
         id: number | null;
     }
 
     interface SpeedTitleSequenceCommand {
-        type: "speed";
+        type: 'speed';
         speed: number;
     }
 
     interface WaitTitleSequenceCommand {
-        type: "wait";
+        type: 'wait';
         duration: number;
     }
 
     interface LoadScenarioTitleSequenceCommand {
-        type: "loadsc";
+        type: 'loadsc';
         scenario: string;
     }
 
     interface RestartTitleSequenceCommand {
-        type: "restart";
+        type: 'restart';
     }
 
     interface EndTitleSequenceCommand {
-        type: "end";
+        type: 'end';
     }
 
     type TitleSequenceCommand =
