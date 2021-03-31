@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc && rollup -c",
     "watch": "tsc-watch --onSuccess 'rollup -c'"
   },
   "keywords": [],
@@ -17,8 +18,5 @@
     "eslint": "^7.21.0",
     "rollup": "^2.40.0",
     "tsc-watch": "^4.2.9"
-  },
-  "dependencies": {
-    "big-integer": "^1.6.48"
   }
 }

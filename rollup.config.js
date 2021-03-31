@@ -3,9 +3,9 @@ import commonjs from "@rollup/plugin-commonjs";
 
 
 export default {
-    input: "build/ride-length.js",
+    input: "build/live-ride-measurements.js",
     output: {
-        dir: ".",
+        dir: "./release",
         format: "iife"
     },
     plugins: [
