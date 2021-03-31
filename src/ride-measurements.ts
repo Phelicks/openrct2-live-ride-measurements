@@ -1,7 +1,3 @@
-import { getGForces } from "./native-calculations";
-
-
-
 export class RideMeasurements {
     private previousVerticalG = 0;
     private previousLateralG = 0;
@@ -9,6 +5,7 @@ export class RideMeasurements {
     private lastCarStatus?: string;
 
     selectedRide: Ride | null = null;
+    currentSpeed = 0;
     maxLength = new MaxValue();
     maxVerticalPosG = new MaxValue();
     maxVerticalNegG = new MinValue(100);
@@ -19,7 +16,7 @@ export class RideMeasurements {
     time = new MaxValue();
 
     update(): void {
-        const cars = this.getRideCars
+        const cars = this.rideCars
         if (cars == null || cars.length == 0)
             return;
 
@@ -44,10 +41,7 @@ export class RideMeasurements {
     }
 
     updateMeasurementsGForce(car: Car): void {
-        const tile = map.getTile(car.x / 32, car.y / 32);
-        const trackElement = tile.elements.filter((element) => {
-            return element.type == "track" && (element as TrackElement).ride == this.selectedRide?.id;
-        })[0] as TrackElement;
+        this.currentSpeed = car.velocity
 
         if (this.maxSpeed.current <= car.velocity) {
             this.maxSpeed.current = car.velocity
@@ -62,16 +56,10 @@ export class RideMeasurements {
             this.time.current++
         }
 
-        const gForces = car.gForces ? {
+        const gForces = {
             gForceVert: car.gForces.verticalG,
             gForceLateral: car.gForces.lateralG,
-        } : getGForces(
-            trackElement.trackType, // incorrect value
-            car.spriteType,
-            car.bankRotation,
-            car.trackProgress,
-            car.velocity
-        );
+        };
 
 
         let verticalG = gForces.gForceVert + this.previousVerticalG;
@@ -144,7 +132,7 @@ export class RideMeasurements {
         return this.rides.map((ride) => ride.name);
     }
 
-    get getRideCars(): Car[] | null {
+    get rideCars(): Car[] | null {
         if (this.selectedRide == null)
             return null;
 

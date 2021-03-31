@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 const windowWidth = 210
-const windowHeight = 200
+const windowHeight = 300
 
 export enum Measurements {
     excitment = 0,
@@ -16,6 +16,7 @@ export enum Measurements {
     airTime = 10,
     drops = 11,
     highestDrop = 12,
+    currentSpeed = 13,
 }
 
 function getName(type: Measurements): string {
@@ -28,6 +29,8 @@ function getName(type: Measurements): string {
             return "Nausea rating"
         case Measurements.maxSpeed:
             return "Max. speed"
+        case Measurements.currentSpeed:
+            return "Current speed"
         case Measurements.averageSpeed:
             return "Average speed"
         case Measurements.rideTime:
@@ -50,34 +53,22 @@ function getName(type: Measurements): string {
 }
 
 function getIndex(type: Measurements): number {
-    switch (type) {
-        case Measurements.excitment:
-            return 0
-        case Measurements.intensity:
-            return 1
-        case Measurements.nausea:
-            return 2
-        case Measurements.maxSpeed:
-            return 4
-        case Measurements.averageSpeed:
-            return 5
-        case Measurements.rideTime:
-            return 6
-        case Measurements.rideLength:
-            return 7
-        case Measurements.positiveGs:
-            return 8
-        case Measurements.negativeGs:
-            return 9
-        case Measurements.lateralGs:
-            return 10
-        case Measurements.airTime:
-            return 11
-        case Measurements.drops:
-            return 12
-        case Measurements.highestDrop:
-            return 13
-    }
+    return [
+        Measurements.currentSpeed,
+        Measurements.maxSpeed,
+        Measurements.averageSpeed,
+        Measurements.rideTime,
+        Measurements.rideLength,
+        Measurements.positiveGs,
+        Measurements.negativeGs,
+        Measurements.lateralGs,
+        Measurements.airTime,
+        Measurements.drops,
+        Measurements.highestDrop,
+        Measurements.excitment,
+        Measurements.intensity,
+        Measurements.nausea,
+    ].indexOf(type)
 }
 
 export class RideMeasurementsWindow {
@@ -86,6 +77,10 @@ export class RideMeasurementsWindow {
 
     get rideSelectionWidget(): DropdownWidget {
         return this.uiWindow?.findWidget("ride_selection") as DropdownWidget;
+    }
+
+    get viewportWidget(): ViewportWidget {
+        return this.uiWindow?.findWidget("car_view") as ViewportWidget;
     }
 
     getLabelWidget(type: Measurements): LabelWidget | undefined {
@@ -118,12 +113,20 @@ export class RideMeasurementsWindow {
     open(onClose: () => void, onSelectRide: (index: number) => void): void {
 
         this.uiWindow = ui.openWindow({
-            classification: "my.window",
+            classification: "live.ride.measurements",
             width: windowWidth,
             height: windowHeight,
-            title: "Ride Measurements Preview",
+            title: "Live Ride Measurements",
             onClose: onClose,
             widgets: [
+                {
+                    name: "car_view",
+                    type: "viewport",
+                    x: 5,
+                    y: 45,
+                    width: windowWidth - 10,
+                    height: 100,
+                },
                 {
                     name: "ride_selection",
                     width: windowWidth - 10,
@@ -145,12 +148,16 @@ export class RideMeasurementsWindow {
                     text: "",
                     isVisible: false
                 },
+                /*
                 this.label(Measurements.excitment, true),
                 this.value(Measurements.excitment, true),
                 this.label(Measurements.intensity, true),
                 this.value(Measurements.intensity, true),
                 this.label(Measurements.nausea, true),
                 this.value(Measurements.nausea, true),
+                */
+                this.label(Measurements.currentSpeed),
+                this.value(Measurements.currentSpeed),
                 this.label(Measurements.maxSpeed),
                 this.value(Measurements.maxSpeed),
                 this.label(Measurements.averageSpeed),
@@ -229,7 +236,7 @@ export class RideMeasurementsWindow {
             width: 145,
             height: 20,
             x: 5,
-            y: 50 + 10 * getIndex(type),
+            y: 150 + 10 * getIndex(type),
             text: getName(type) + ":",
             isDisabled
         }
@@ -242,7 +249,7 @@ export class RideMeasurementsWindow {
             width: windowWidth - 10,
             height: 20,
             x: 150,
-            y: 50 + 10 * getIndex(type),
+            y: 150 + 10 * getIndex(type),
             text: "-",
             isDisabled
         }
