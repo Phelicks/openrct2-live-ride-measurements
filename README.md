@@ -4,7 +4,7 @@ An OpenRCT2 plugin which shows ride measurements. Can be useful when constructin
 
 ---
 
-![Example GIF](documentation/live-example.gif)
+![Example GIF](https://github.com/Phelicks/openrct2-live-ride-measurements/raw/main/documentation/live-example.gif)
 
 ---
 
@@ -20,10 +20,10 @@ An OpenRCT2 plugin which shows ride measurements. Can be useful when constructin
 ## How to use
 1. Load your scenario.
 2. Open the `Live Ride Measurements` windows by clicking and holding the map icon.
-![Example Menu](documentation/menu.png)
+![Example Menu](https://github.com/Phelicks/openrct2-live-ride-measurements/raw/main/documentation/menu.png)
 3. Select your ride in the opened window.
 4. If you're still constructing the roller coaster, enable ghost trains by clicking the blue flag in the construction menu.
-![Example Ghost Trains](documentation/construction.png)
+![Example Ghost Trains](https://github.com/Phelicks/openrct2-live-ride-measurements/raw/main/documentation/construction.png)
 
 Please be aware that at this moment the plug-in only supports rides with a single station.
 
