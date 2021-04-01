@@ -6,7 +6,7 @@ import { Measurements, RideMeasurementsWindow } from "./ride-measurements-window
 
 registerPlugin({
     name: "Live Ride Measurements",
-    version: "0.3.3",
+    version: "0.3.4",
     authors: ["Felix Janus"],
     licence: "MIT",
     type: "remote",
