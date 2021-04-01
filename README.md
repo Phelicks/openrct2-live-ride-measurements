@@ -44,4 +44,4 @@ For development you can use:
 ```
 npm run watch 
 ```
-Be aware that you still need to copy the plugin manually in your OpenRXT2 plugin folder.
+Be aware that you still need to copy the plugin manually in your OpenRCT2 plugin folder.
