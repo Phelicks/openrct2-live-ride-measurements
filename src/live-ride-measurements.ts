@@ -6,10 +6,10 @@ import { Measurements, RideMeasurementsWindow } from "./ride-measurements-window
 
 registerPlugin({
     name: "Live Ride Measurements",
-    version: "0.3.4",
+    version: "0.3.5",
     authors: ["Felix Janus"],
     licence: "MIT",
-    type: "remote",
+    type: "local",
     minApiVersion: 24,
     main: () => {
 

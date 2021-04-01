@@ -12,9 +12,9 @@ An OpenRCT2 plugin which shows ride measurements. Can be useful when constructin
 
 1. Download the latest release from [here](https://github.com/Phelicks/openrct2-live-ride-measurements/releases/latest).
 2. Put the `.js` file in your OpenRCT2 Plugin folder:
-    - Windows: C:\Users\YourName\Documents\OpenRCT2
-    - Mac: /Users/YourName/Library/Application Support/OpenRCT2
-    - Linux: $XDG_CONFIG_HOME/OpenRCT2 or in its absence $HOME/.config/OpenRCT2
+    - Windows: C:\Users\YourName\Documents\OpenRCT2\plugin
+    - Mac: /Users/YourName/Library/Application Support/OpenRCT2/plugin
+    - Linux: $XDG_CONFIG_HOME/OpenRCT2/plugin or in its absence $HOME/.config/OpenRCT2/plugin
 3. Start OpenRCT2.
 
 ## How to use
