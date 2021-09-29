@@ -4,19 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && rollup -c",
-    "watch": "tsc-watch --onSuccess 'rollup -c'"
+    "build": "tsc && esbuild ./build/live-ride-measurements.js --bundle --platform=node --outfile=release/live-ride-measurements.js",
+    "watch": "tsc-watch --onSuccess 'npm run success'",
+    "success": "npm run build -c && npm run copy",
+    "copy": "copy .\\release\\live-ride-measurements.js C:\\Users\\Felix\\Documents\\OpenRCT2\\plugin"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.1.0",
-    "@rollup/plugin-node-resolve": "^11.2.0",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
+    "esbuild": "^0.13.3",
     "eslint": "^7.21.0",
-    "rollup": "^2.40.0",
     "tsc-watch": "^4.2.9"
   }
 }
