@@ -345,8 +345,12 @@ export class RideMeasurementsWindow {
 
     label(type: Measurements, isDisabled = false): LabelWidget {
         return {
+            window: this.uiWindow!!,
             name: type.toString(),
             type: "label",
+            isVisible: true,
+            textAlign: "left",
+            tooltip: "",
             width: 145,
             height: 20,
             x: 5,
@@ -358,8 +362,12 @@ export class RideMeasurementsWindow {
 
     value(type: Measurements, isDisabled = false): LabelWidget {
         return {
+            window: this.uiWindow!!,
             name: type.toString() + "-value",
             type: "label",
+            isVisible: true,
+            textAlign: "left",
+            tooltip: "",
             width: windowWidth - 10,
             height: 20,
             x: 150,
