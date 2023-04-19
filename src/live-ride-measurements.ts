@@ -6,11 +6,13 @@ import { Measurements, RideMeasurementsWindow } from "./ride-measurements-window
 
 registerPlugin({
     name: "Live Ride Measurements",
-    version: "0.3.5",
+    version: "0.3.6",
     authors: ["Felix Janus"],
     licence: "MIT",
     type: "local",
     minApiVersion: 24,
+    // TODO: set correct value
+    targetApiVersion: 24,
     main: () => {
 
         if (!ui) {
