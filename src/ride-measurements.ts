@@ -1,8 +1,17 @@
+enum BlockSectionStatus {
+    traveling, inStation, inBlockBreak, inChainLift
+}
+
 export class RideMeasurements {
     private previousVerticalG = 0
     private previousLateralG = 0
     private averageSpeedTestTimeout = 0
     private lastCarStatus?: string
+    private blockSectionCount = 0
+    private blockSectionStatus: BlockSectionStatus | undefined
+    private blockSectionTiming: number[] | undefined
+
+    blockSectionText = "Waiting for station..."
 
     resetValuesOnNewCircuit = false
     selectedRide: Ride | null = null
@@ -28,9 +37,10 @@ export class RideMeasurements {
             }
         }
         this.lastCarStatus = car.status
-
+        
         this.updateMeasurementsLength(car)
         this.updateMeasurementsGForce(car)
+        this.updateBlockSectionTiming(car)
     }
 
     updateMeasurementsLength(car: Car): void {
@@ -39,6 +49,73 @@ export class RideMeasurements {
         const result = Math.abs(((velocity + acceleration) >> 10) * 42)
 
         this.maxLength.current += result
+    }
+
+    updateBlockSectionTiming(car: Car): void {
+        const blockBreakTrackType = 216
+        const tile = map.getTile(car.x/32, car.y/32)
+
+        for (const element of tile.elements) {
+            if (element.type != "track") continue
+            if (element.ride != car.ride) continue
+            if (element.baseZ != car.trackLocation.z) continue
+
+            const track = element as TrackElement
+
+            if (car.status == "waiting_to_depart") {
+                if (this.blockSectionStatus != BlockSectionStatus.inStation) {
+                    if (this.blockSectionCount > 0 && this.blockSectionTiming) {
+                        // this.blockSectionTiming.push(Date.now())
+                        // console.log("Total block section count: " + this.blockSectionCount)
+                    }
+                    // console.log("Found station.")
+                    this.blockSectionCount = 1
+                }
+                this.blockSectionStatus = BlockSectionStatus.inStation
+            }
+            else if (track.trackType == blockBreakTrackType) {
+                if (this.blockSectionStatus != BlockSectionStatus.inBlockBreak && this.blockSectionTiming) {
+                    // console.log("found block break")
+                    this.blockSectionCount++
+                }
+                this.blockSectionStatus = BlockSectionStatus.inBlockBreak
+            }
+            else if (track.hasChainLift || track.hasCableLift) {
+                if (this.blockSectionStatus != BlockSectionStatus.inChainLift && this.blockSectionTiming) {
+                    // console.log("chain")
+                    this.blockSectionCount++
+                }
+                this.blockSectionStatus = BlockSectionStatus.inChainLift
+            }
+            else {
+                if (this.blockSectionStatus == BlockSectionStatus.inStation) {
+                    this.blockSectionTiming = [Date.now()]
+                }
+                else if (this.blockSectionStatus != BlockSectionStatus.traveling) {
+                    if (this.blockSectionTiming) {
+                        // console.log("Time section.")
+                        this.blockSectionTiming.push(Date.now())
+                    }
+                }
+                this.blockSectionStatus = BlockSectionStatus.traveling
+            }
+        }
+
+        if (this.blockSectionTiming) {
+            this.blockSectionText = ""
+
+            var lastTime: number | undefined
+            var round = 1
+            for (const time of [...this.blockSectionTiming, Date.now()]) {
+                if (!lastTime) {
+                    lastTime = time
+                    continue
+                }
+                const text = "Block " + round++ + ": " + ((time - lastTime) / 1000)
+                this.blockSectionText += text + "\n"
+                lastTime = time
+            }
+        }
     }
 
     updateMeasurementsGForce(car: Car): void {

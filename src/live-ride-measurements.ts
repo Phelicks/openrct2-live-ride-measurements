@@ -78,6 +78,8 @@ function openRideMeasurementsWindow() {
         rideMeasurementsWindow.setValue(Measurements.airTime, (rideMeasurements.totalAirTime.value * 3 / 100).toFixed(2) + " secs")
         rideMeasurementsWindow.setValue(Measurements.averageSpeed, formatSpeed(((rideMeasurements.averageSpeed.value / rideMeasurements.time.value) * 9) >> 18))
         rideMeasurementsWindow.setValue(Measurements.rideTime, (rideMeasurements.time.value) + " secs")
+
+        rideMeasurementsWindow.setBlockSectionValue(rideMeasurements.blockSectionText)
     })
 
     rideMeasurementsWindow.onPickRide = () => {

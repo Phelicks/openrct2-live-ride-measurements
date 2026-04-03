@@ -126,6 +126,13 @@ export class RideMeasurementsWindow {
         }
     }
 
+    setBlockSectionValue(text: string): void {
+        const label = this.uiWindow?.findWidget<LabelWidget>("block_section_label")
+        if (label) {
+            label.text = text
+        }
+    }
+
     set dropdownContent(content: string[]) {
         this.rideSelectionWidget.items = this.dropdownHeadline.concat(content)
     }
@@ -153,6 +160,7 @@ export class RideMeasurementsWindow {
                 this.updateWindow()
             },
             tabs: [
+                // Main Tab
                 {
                     image: 5229,
                     widgets: [
@@ -246,6 +254,25 @@ export class RideMeasurementsWindow {
                         // this.value(Measurements.highestDrop, true),
                     ]
                 },
+                // Block Section Tab
+                {
+                    image: 5252,
+                    widgets: [
+                        {
+                            name: "block_section_label",
+                            type: "label",
+                            isVisible: true,
+                            textAlign: "left",
+                            tooltip: "",
+                            width: windowWidth - 10,
+                            height: 20,
+                            x: 5,
+                            y: 50,
+                            text: ""
+                        }
+                    ]
+                },
+                // Settings Tab
                 {
                     image: 5201,
                     widgets: [
