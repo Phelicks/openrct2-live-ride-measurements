@@ -4,19 +4,24 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && esbuild ./build/live-ride-measurements.js --bundle --platform=node --outfile=release/live-ride-measurements.js",
+    "build": "tsc && npm run bundle && npm run compile-es5",
+    "bundle": "esbuild ./build/live-ride-measurements.js --bundle --platform=node --outfile=release/live-ride-measurements.es2015.js",
+    "compile-es5": "npx babel release/live-ride-measurements.es2015.js --out-file release/live-ride-measurements.js --presets=@babel/preset-env",
     "watch": "tsc-watch --onSuccess 'npm run success'",
     "success": "npm run build -c && npm run copy",
-    "copy": "copy .\\release\\live-ride-measurements.js C:\\Users\\Felix\\Documents\\OpenRCT2\\plugin"
+    "copy": "cp release/live-ride-measurements.js ~/Library/Application\\ Support/OpenRCT2/plugin"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.57.0",
-    "@typescript-eslint/parser": "^5.57.0",
-    "esbuild": "^0.17.14",
-    "eslint": "^8.37.0",
-    "tsc-watch": "^6.0.0"
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "esbuild": "^0.28.0",
+    "eslint": "^8.57.1",
+    "tsc-watch": "^7.2.0"
   }
 }
