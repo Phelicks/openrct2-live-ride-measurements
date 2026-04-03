@@ -1,18 +1,18 @@
 import { RideMeasurements } from "./ride-measurements"
-import { Measurements, RideMeasurementsWindow } from "./ride-measurements-window"
+import { Measurements, RideMeasurementsWindow, UiState } from "./ride-measurements-window"
 
 // TODO:
 // Doesn't support rides with multiple stations
 
 registerPlugin({
     name: "Live Ride Measurements",
-    version: "0.3.6",
+    version: "0.4.0",
     authors: ["Felix Janus"],
     licence: "MIT",
     type: "local",
     minApiVersion: 24,
     // TODO: set correct value
-    targetApiVersion: 24,
+    targetApiVersion: 110,
     main: () => {
 
         if (!ui) {
@@ -38,19 +38,15 @@ function openRideMeasurementsWindow() {
 
     const tickHook = context.subscribe("interval.tick", () => {
         if (rideMeasurements.selectedRide == null) {
-            rideMeasurementsWindow.hideValues()
-            rideMeasurementsWindow.hideHint()
+            rideMeasurementsWindow.updateWindow(UiState.noRideSelected)
             return
         }
 
         const headCar = rideMeasurements.headCar
         if (headCar == null) {
-            rideMeasurementsWindow.hideValues()
-            rideMeasurementsWindow.showHint("Please enable ghost trains.")
+            rideMeasurementsWindow.updateWindow(UiState.waitingForGhostTrains)
             return
         }
-        rideMeasurementsWindow.showValues()
-        rideMeasurementsWindow.hideHint()
 
         rideMeasurementsWindow.viewportWidget?.viewport?.moveTo({
             x: headCar.x,
@@ -103,6 +99,7 @@ function openRideMeasurementsWindow() {
                 }
                 if (rideIndex === -1) return
                 rideMeasurements.selectRide(rideIndex)
+                rideMeasurementsWindow.updateWindow(UiState.rideStats)
                 rideMeasurementsWindow.setDropdownIndex(rideIndex + 1)
                 ui.tool?.cancel()
             }
@@ -114,9 +111,11 @@ function openRideMeasurementsWindow() {
             ui.tool.cancel()
         }
         rideMeasurements.selectRide(null)
+        rideMeasurementsWindow.updateWindow(UiState.noRideSelected)
         tickHook.dispose()
     }, (index) => {
         rideMeasurements.selectRide(index - 1)
+        rideMeasurementsWindow.updateWindow(UiState.rideStats)
     })
     rideMeasurementsWindow.dropdownContent = rideNames
 

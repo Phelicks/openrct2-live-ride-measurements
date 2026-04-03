@@ -19,6 +19,14 @@ export enum Measurements {
     currentSpeed = 13,
 }
 
+export enum UiState {
+    settings = 0,
+    noRideSelected = 1,
+    waitingForGhostTrains = 2,
+    rideStats = 3,
+    blockTiming = 4,
+}
+
 function getName(type: Measurements): string {
     switch (type) {
         case Measurements.excitment:
@@ -74,8 +82,9 @@ function getIndex(type: Measurements): number {
 export class RideMeasurementsWindow {
     private _autoResetValues = false
     private _useImperial = false
-    private _valuesVisible = false
-    private _hintVisible = false
+    private uiState = UiState.noRideSelected
+    // used to restore the ui after a tab change
+    private uiStateTabStorage: UiState | undefined
 
     onReset: (() => void) | undefined
     onPickRide: (() => void) | undefined
@@ -95,12 +104,20 @@ export class RideMeasurementsWindow {
         return this.uiWindow?.findWidget("ride_selection") as DropdownWidget
     }
 
-    get viewportWidget(): ViewportWidget | undefined {
-        return this.uiWindow?.findWidget<ViewportWidget>("car_view")
+    get viewportWidget(): ViewportWidget {
+        return this.uiWindow?.findWidget<ViewportWidget>("car_view")!
     }
 
-    get resetButton(): ButtonWidget | undefined {
-        return this.uiWindow?.findWidget<ButtonWidget>("reset_button")
+    get resetButton(): ButtonWidget {
+        return this.uiWindow?.findWidget<ButtonWidget>("reset_button")!
+    }
+
+    get toggleBlockTimeButton(): ButtonWidget {
+        return this.uiWindow?.findWidget<ButtonWidget>("block_timing_toggle")!
+    }
+
+    get hintLabel(): LabelWidget {
+        return this.uiWindow?.findWidget<LabelWidget>("hint_label")!
     }
 
     getLabelWidget(type: Measurements): LabelWidget | undefined {
@@ -144,8 +161,14 @@ export class RideMeasurementsWindow {
         }
     }
 
-    open(onClose: () => void, onSelectRide: (index: number) => void): void {
+    private updateCheckboxes() {
+        const checkboxAutoReset = this.uiWindow?.findWidget<CheckboxWidget>("checkbox_auto_reset")!
+        const checkboxUseImperial = this.uiWindow?.findWidget<CheckboxWidget>("checkbox_use_imperial")!
+        checkboxAutoReset.isChecked = this._autoResetValues
+        checkboxUseImperial.isChecked = this._useImperial
+    }
 
+    open(onClose: () => void, onSelectRide: (index: number) => void): void {
         this.uiWindow = ui.openWindow({
             classification: "live.ride.measurements",
             width: windowWidth,
@@ -153,11 +176,14 @@ export class RideMeasurementsWindow {
             title: "Live Ride Measurements",
             onClose: onClose,
             onTabChange: () => {
-                if (this.viewportWidget) {
-                    this.viewportWidget.isVisible = false
+                if(this.uiWindow?.tabIndex == 0) {
+                    this.updateWindow(this.uiStateTabStorage || UiState.noRideSelected)
                 }
-
-                this.updateWindow()
+                else if(this.uiWindow?.tabIndex == 1) {
+                    this.updateCheckboxes()
+                    this.uiStateTabStorage = this.uiState
+                    this.updateWindow(UiState.settings)
+                }
             },
             tabs: [
                 // Main Tab
@@ -193,6 +219,7 @@ export class RideMeasurementsWindow {
                         {
                             name: "car_view",
                             type: "viewport",
+                            isVisible: false,
                             x: 5,
                             y: 75,
                             width: windowWidth - 10,
@@ -221,6 +248,22 @@ export class RideMeasurementsWindow {
                                     this.onReset()
                                 }
                             }
+                        },
+                        {
+                            name: "block_timing_toggle",
+                            type: "button",
+                            x: 5,
+                            y: windowHeight - 5 - 15,
+                            width: 102,
+                            height: 15,
+                            text: "Show Block Timing",
+                            onClick: () => {
+                                if(this.uiState == UiState.rideStats) {
+                                    this.updateWindow(UiState.blockTiming)
+                                } else {
+                                    this.updateWindow(UiState.rideStats)
+                                }
+                            },
                         },
                         /*
                         this.label(Measurements.excitment, true),
@@ -252,24 +295,32 @@ export class RideMeasurementsWindow {
                         // this.value(Measurements.drops, true),
                         // this.label(Measurements.highestDrop, true),
                         // this.value(Measurements.highestDrop, true),
-                    ]
-                },
-                // Block Section Tab
-                {
-                    image: 5252,
-                    widgets: [
+                        
+                        // Block Section Timing
                         {
-                            name: "block_section_label",
+                            name: "block_section_title",
                             type: "label",
-                            isVisible: true,
+                            isVisible: false,
                             textAlign: "left",
                             tooltip: "",
                             width: windowWidth - 10,
                             height: 20,
                             x: 5,
-                            y: 50,
+                            y: 180,
+                            text: "Block Section Timing"
+                        },
+                        {
+                            name: "block_section_label",
+                            type: "label",
+                            isVisible: false,
+                            textAlign: "left",
+                            tooltip: "",
+                            width: windowWidth - 10,
+                            height: 20,
+                            x: 5,
+                            y: 192,
                             text: ""
-                        }
+                        },
                     ]
                 },
                 // Settings Tab
@@ -289,7 +340,7 @@ export class RideMeasurementsWindow {
                             onChange: (checked) => {
                                 this._autoResetValues = checked
                                 context.sharedStorage.set("phelicks.live_measurements.auto_reset", checked)
-                                this.updateWindow()
+                                this.updateCheckboxes()
                             }
                         },
                         {
@@ -304,7 +355,7 @@ export class RideMeasurementsWindow {
                             onChange: (checked) => {
                                 this._useImperial = checked
                                 context.sharedStorage.set("phelicks.live_measurements.use_imperial", checked)
-                                this.updateWindow()
+                                this.updateCheckboxes()
                             }
                         },
                         // viewport behaves buggy in tab view
@@ -313,6 +364,7 @@ export class RideMeasurementsWindow {
                         {
                             name: "car_view",
                             type: "viewport",
+                            isVisible: false,
                             x: 5,
                             y: 75,
                             width: windowWidth - 10,
@@ -325,93 +377,12 @@ export class RideMeasurementsWindow {
         })
     }
 
-    hideValues(): void {
-        if(!this._valuesVisible) { return }
-        this._valuesVisible = false
-
-        for (const measurement in Measurements) {
-            const label = this.getLabelWidget(Number(measurement))
-            const value = this.getValueLabelWidget(Number(measurement))
-            if (label) {
-                label.isVisible = false
-            }
-            if (value) {
-                value.isVisible = false
-            }
-        }
-
-        if (this.viewportWidget) {
-            this.viewportWidget.isVisible = false
-        }
-
-        if (this.resetButton) {
-            this.resetButton.isVisible = false
-        }
-
-        this.updateWindow()
-    }
-
-    showValues(): void {
-        if (this.uiWindow?.tabIndex == 1 || this._valuesVisible) {
-            return
-        }
-        this._valuesVisible = true
-
-        for (const measurement in Measurements) {
-            const label = this.getLabelWidget(Number(measurement))
-            const value = this.getValueLabelWidget(Number(measurement))
-            if (label) {
-                label.isVisible = true
-            }
-            if (value) {
-                value.isVisible = true
-            }
-        }
-
-        if (this.viewportWidget) {
-            this.viewportWidget.isVisible = true
-        }
-
-
-        if (this.resetButton) {
-            this.resetButton.isVisible = true
-        }
-
-        this.updateWindow()
-    }
-
-    showHint(text: string): void {
-        if(this._hintVisible) { return }
-        this._hintVisible = true
-
-        for (const widget of this.uiWindow?.widgets ?? []) {
-            if (widget.name == "hint_label") {
-                (widget as LabelWidget).text = text
-                widget.isVisible = true
-                return
-            }
-        }
-        this.updateWindow()
-    }
-
-    hideHint(): void {
-        if(!this._hintVisible) { return }
-        this._hintVisible = false
-
-        for (const widget of this.uiWindow?.widgets ?? []) {
-            if (widget.name == "hint_label") {
-                widget.isVisible = false
-                return
-            }
-        }
-    }
-
     label(type: Measurements, isDisabled = false): LabelWidget {
         return {
             window: this.uiWindow!!,
             name: type.toString(),
             type: "label",
-            isVisible: true,
+            isVisible: false,
             textAlign: "left",
             tooltip: "",
             width: 145,
@@ -428,7 +399,7 @@ export class RideMeasurementsWindow {
             window: this.uiWindow!!,
             name: type.toString() + "-value",
             type: "label",
-            isVisible: true,
+            isVisible: false,
             textAlign: "left",
             tooltip: "",
             width: windowWidth - 10,
@@ -440,22 +411,66 @@ export class RideMeasurementsWindow {
         }
     }
 
-    updateWindow(): void {
-        // This is a hack because the window doesn't get
-        // updated when labels are made visible/invisible
-        if (this.uiWindow) {
-            this.uiWindow.x += 10
-            this.uiWindow.x -= 10
-        }
+    updateWindow(uiState: UiState): void {
+        if(this.uiState == uiState) return
+        this.uiState = uiState
 
-        const checkboxAutoReset = this.uiWindow?.findWidget<CheckboxWidget>("checkbox_auto_reset")
-        const checkboxUseImperial = this.uiWindow?.findWidget<CheckboxWidget>("checkbox_use_imperial")
+        const blockTimingTitle = this.uiWindow?.findWidget<LabelWidget>("block_section_title")!
+        const blockTimingLabel = this.uiWindow?.findWidget<LabelWidget>("block_section_label")!
 
-        if (checkboxAutoReset) {
-            checkboxAutoReset.isChecked = this._autoResetValues
+        switch(uiState) {
+            case UiState.settings:
+                break
+            case UiState.noRideSelected:
+                this.viewportWidget.isVisible = false
+                this.valuesVisible(false)
+                blockTimingTitle.isVisible = false
+                blockTimingLabel.isVisible = false
+                this.hintLabel.isVisible = false
+                this.toggleBlockTimeButton.isVisible = false
+                this.resetButton.isVisible = false
+                break
+            case UiState.waitingForGhostTrains:
+                this.viewportWidget.isVisible = false
+                this.valuesVisible(false)
+                this.hintLabel.text = "Please enable ghost trains."
+                this.hintLabel.isVisible = true
+                this.toggleBlockTimeButton.isVisible = false
+                this.resetButton.isVisible = false
+                break
+            case UiState.rideStats:
+                this.viewportWidget.isVisible = true
+                this.valuesVisible(true)
+                this.hintLabel.isVisible = false
+                blockTimingTitle.isVisible = false
+                blockTimingLabel.isVisible = false
+                this.toggleBlockTimeButton.text = "Show Block Timing"
+                this.toggleBlockTimeButton.isVisible = true
+                this.resetButton.isVisible = true
+                break
+            case UiState.blockTiming:
+                this.viewportWidget.isVisible = true
+                this.valuesVisible(false)
+                this.hintLabel.isVisible = false
+                blockTimingTitle.isVisible = true
+                blockTimingLabel.isVisible = true
+                this.toggleBlockTimeButton.text = "Show Stats"
+                this.toggleBlockTimeButton.isVisible = true
+                this.resetButton.isVisible = true
+                break
         }
-        if (checkboxUseImperial) {
-            checkboxUseImperial.isChecked = this._useImperial
+    }
+
+    private valuesVisible(visible: boolean): void {
+        for (const measurement in Measurements) {
+            const label = this.getLabelWidget(Number(measurement))
+            const value = this.getValueLabelWidget(Number(measurement))
+            if (label) {
+                label.isVisible = visible
+            }
+            if (value) {
+                value.isVisible = visible
+            }
         }
     }
 }

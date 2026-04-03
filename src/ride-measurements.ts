@@ -200,6 +200,11 @@ export class RideMeasurements {
         this.maxSpeed.reset()
         this.averageSpeed.reset()
         this.time.reset()
+
+        this.blockSectionCount = 0
+        this.blockSectionStatus = undefined
+        this.blockSectionTiming = undefined
+        this.blockSectionText = "Waiting for station..."
     }
 
     get rides(): Ride[] {
