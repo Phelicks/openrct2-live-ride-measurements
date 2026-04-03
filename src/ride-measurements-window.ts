@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-const windowWidth = 230
+const windowWidth = 220
 const windowHeight = 300
 
 export enum Measurements {
@@ -166,7 +166,7 @@ export class RideMeasurementsWindow {
                     widgets: [
                         {
                             name: "ride_selection",
-                            width: windowWidth - 48,
+                            width: windowWidth - 40,
                             height: 20,
                             x: 5,
                             y: 50,
@@ -178,11 +178,11 @@ export class RideMeasurementsWindow {
                         {
                             name: "pick_button",
                             type: "button",
-                            x: windowWidth - 40,
-                            y: 50,
-                            width: 35,
-                            height: 20,
-                            text: "Pick",
+                            x: windowWidth - 30,
+                            y: 47,
+                            width: 25,
+                            height: 25,
+                            image: "eyedropper",
                             tooltip: "Click a ride vehicle on the map to select it",
                             onClick: () => {
                                 if (this.onPickRide) {
