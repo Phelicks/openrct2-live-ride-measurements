@@ -36,7 +36,6 @@ function openRideMeasurementsWindow() {
 
     const rideNames = rideMeasurements.rideNames
 
-
     const tickHook = context.subscribe("interval.tick", () => {
         if (rideMeasurements.selectedRide == null) {
             rideMeasurementsWindow.hideValues()
@@ -44,8 +43,8 @@ function openRideMeasurementsWindow() {
             return
         }
 
-        const cars = rideMeasurements.rideCars
-        if (cars == null || cars.length == 0) {
+        const headCar = rideMeasurements.headCar
+        if (headCar == null) {
             rideMeasurementsWindow.hideValues()
             rideMeasurementsWindow.showHint("Please enable ghost trains.")
             return
@@ -53,15 +52,14 @@ function openRideMeasurementsWindow() {
         rideMeasurementsWindow.showValues()
         rideMeasurementsWindow.hideHint()
 
-        const firstCar = cars[0]
         rideMeasurementsWindow.viewportWidget?.viewport?.moveTo({
-            x: firstCar.x,
-            y: firstCar.y,
-            z: firstCar.z
+            x: headCar.x,
+            y: headCar.y,
+            z: headCar.z
         })
 
         rideMeasurements.resetValuesOnNewCircuit = rideMeasurementsWindow.autoResetValues
-        rideMeasurements.update()
+        rideMeasurements.update(headCar)
 
         /*
         if (rideMeasurements.selectedRide != null) {
@@ -82,7 +80,37 @@ function openRideMeasurementsWindow() {
         rideMeasurementsWindow.setValue(Measurements.rideTime, (rideMeasurements.time.value) + " secs")
     })
 
+    rideMeasurementsWindow.onPickRide = () => {
+        ui.activateTool({
+            id: "live-ride-picker",
+            cursor: "cross_hair",
+            filter: ["ride"],
+            onDown: (e) => {
+                if (e.mapCoords == null || e.tileElementIndex == null) return
+                const tile = map.getTile(Math.floor(e.mapCoords.x / 32), Math.floor(e.mapCoords.y / 32))
+                const element = tile.getElement(e.tileElementIndex)
+                if (element.type !== "track" && element.type !== "entrance") return
+                const rideId = (element as TrackElement).ride
+                const rides = rideMeasurements.rides
+                let rideIndex = -1
+                for (let i = 0; i < rides.length; i++) {
+                    if (rides[i].id === rideId) {
+                        rideIndex = i
+                        break
+                    }
+                }
+                if (rideIndex === -1) return
+                rideMeasurements.selectRide(rideIndex)
+                rideMeasurementsWindow.setDropdownIndex(rideIndex + 1)
+                ui.tool?.cancel()
+            }
+        })
+    }
+
     rideMeasurementsWindow.open(() => {
+        if (ui.tool?.id === "live-ride-picker") {
+            ui.tool.cancel()
+        }
         rideMeasurements.selectRide(null)
         tickHook.dispose()
     }, (index) => {

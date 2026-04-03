@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-const windowWidth = 210
+const windowWidth = 230
 const windowHeight = 300
 
 export enum Measurements {
@@ -74,8 +74,11 @@ function getIndex(type: Measurements): number {
 export class RideMeasurementsWindow {
     private _autoResetValues = false
     private _useImperial = false
+    private _valuesVisible = false
+    private _hintVisible = false
 
     onReset: (() => void) | undefined
+    onPickRide: (() => void) | undefined
     uiWindow: Window | null = null
     dropdownHeadline = ["Select a ride"]
 
@@ -127,6 +130,13 @@ export class RideMeasurementsWindow {
         this.rideSelectionWidget.items = this.dropdownHeadline.concat(content)
     }
 
+    setDropdownIndex(index: number): void {
+        const dropdown = this.rideSelectionWidget
+        if (dropdown) {
+            dropdown.selectedIndex = index
+        }
+    }
+
     open(onClose: () => void, onSelectRide: (index: number) => void): void {
 
         this.uiWindow = ui.openWindow({
@@ -148,7 +158,7 @@ export class RideMeasurementsWindow {
                     widgets: [
                         {
                             name: "ride_selection",
-                            width: windowWidth - 10,
+                            width: windowWidth - 48,
                             height: 20,
                             x: 5,
                             y: 50,
@@ -156,6 +166,21 @@ export class RideMeasurementsWindow {
                             items: this.dropdownHeadline,
                             selectedIndex: 0,
                             onChange: onSelectRide,
+                        },
+                        {
+                            name: "pick_button",
+                            type: "button",
+                            x: windowWidth - 40,
+                            y: 50,
+                            width: 35,
+                            height: 20,
+                            text: "Pick",
+                            tooltip: "Click a ride vehicle on the map to select it",
+                            onClick: () => {
+                                if (this.onPickRide) {
+                                    this.onPickRide()
+                                }
+                            }
                         },
                         {
                             name: "car_view",
@@ -274,6 +299,9 @@ export class RideMeasurementsWindow {
     }
 
     hideValues(): void {
+        if(!this._valuesVisible) { return }
+        this._valuesVisible = false
+
         for (const measurement in Measurements) {
             const label = this.getLabelWidget(Number(measurement))
             const value = this.getValueLabelWidget(Number(measurement))
@@ -297,9 +325,11 @@ export class RideMeasurementsWindow {
     }
 
     showValues(): void {
-        if (this.uiWindow?.tabIndex == 1) {
+        if (this.uiWindow?.tabIndex == 1 || this._valuesVisible) {
             return
         }
+        this._valuesVisible = true
+
         for (const measurement in Measurements) {
             const label = this.getLabelWidget(Number(measurement))
             const value = this.getValueLabelWidget(Number(measurement))
@@ -324,6 +354,9 @@ export class RideMeasurementsWindow {
     }
 
     showHint(text: string): void {
+        if(this._hintVisible) { return }
+        this._hintVisible = true
+
         for (const widget of this.uiWindow?.widgets ?? []) {
             if (widget.name == "hint_label") {
                 (widget as LabelWidget).text = text
@@ -335,6 +368,9 @@ export class RideMeasurementsWindow {
     }
 
     hideHint(): void {
+        if(!this._hintVisible) { return }
+        this._hintVisible = false
+
         for (const widget of this.uiWindow?.widgets ?? []) {
             if (widget.name == "hint_label") {
                 widget.isVisible = false

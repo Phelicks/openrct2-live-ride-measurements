@@ -16,25 +16,21 @@ export class RideMeasurements {
     averageSpeed = new MaxValue()
     time = new MaxValue()
 
-    update(): void {
-        const cars = this.rideCars
-        if (cars == null || cars.length == 0)
+    update(car: Car | null): void {
+        if (car == null)
             return
 
-        for (const car of cars) {
-            if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
-                if (this.resetValuesOnNewCircuit) {
-                    this.reset()
-                } else {
-                    this.newCircuit()
-                }
+        if (car.status == "waiting_to_depart" && car.status != this.lastCarStatus) {
+            if (this.resetValuesOnNewCircuit) {
+                this.reset()
+            } else {
+                this.newCircuit()
             }
-            this.lastCarStatus = car.status
-
-            this.updateMeasurementsLength(car)
-            this.updateMeasurementsGForce(car)
         }
+        this.lastCarStatus = car.status
 
+        this.updateMeasurementsLength(car)
+        this.updateMeasurementsGForce(car)
     }
 
     updateMeasurementsLength(car: Car): void {
@@ -137,7 +133,7 @@ export class RideMeasurements {
         return this.rides.map((ride) => ride.name)
     }
 
-    get rideCars(): Car[] | null {
+    get headCar(): Car | null {
         if (this.selectedRide == null)
             return null
 
@@ -146,14 +142,7 @@ export class RideMeasurements {
         if (vehicleId != 0 && !vehicleId)
             return null
 
-        const cars = map.getAllEntities("car")
-            .filter((entity) => entity.id == vehicleId)
-            .map((entity) => entity as Car)
-
-        if (cars.length == 0)
-            return null
-
-        return cars
+        return map.getEntity(vehicleId) as Car | null;
     }
 }
 
